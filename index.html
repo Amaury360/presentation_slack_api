@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comprendre l'API Slack — Présentation</title>
+<style>
+:root{
+  --bg:#0c0f14;
+  --bg-soft:#11151c;
+  --panel:#161b24;
+  --panel-2:#1b212c;
+  --border:#262e3a;
+  --border-soft:#1f2630;
+  --text:#eef1f6;
+  --text-dim:#9aa5b4;
+  --text-faint:#6b7686;
+  --accent:#7C5CFF;
+  --accent-2:#36C5F0;
+  --accent-3:#2EB67D;
+  --accent-4:#ECB22E;
+  --accent-5:#E01E5A;
+  --gradient: linear-gradient(135deg,#7C5CFF 0%, #36C5F0 100%);
+  --radius:18px;
+  --shadow: 0 20px 60px -20px rgba(0,0,0,0.6);
+  font-size:16px;
+}
+*{box-sizing:border-box;}
+html,body{
+  margin:0;padding:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
+  overflow:hidden;
+  height:100%;
+  width:100%;
+}
+body{
+  background:
+    radial-gradient(circle at 15% 10%, rgba(124,92,255,0.12), transparent 45%),
+    radial-gradient(circle at 85% 90%, rgba(54,197,240,0.10), transparent 45%),
+    var(--bg);
+}
+.deck{
+  position:relative;
+  width:100vw;
+  height:100vh;
+}
+.slide{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  padding:54px 76px 40px;
+  opacity:0;
+  transform:translateY(18px) scale(0.99);
+  pointer-events:none;
+  transition:opacity .5s cubic-bezier(.4,0,.2,1), transform .55s cubic-bezier(.4,0,.2,1);
+}
+.slide.active{
+  opacity:1;
+  transform:translateY(0) scale(1);
+  pointer-events:auto;
+}
+.slide-kicker{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:13px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--text-faint);
+  font-weight:600;
+  margin-bottom:6px;
+}
+.slide-kicker .dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--gradient);
+  box-shadow:0 0 12px rgba(124,92,255,0.7);
+}
+.slide h1{
+  font-size:38px;
+  font-weight:800;
+  letter-spacing:-0.02em;
+  margin:0 0 6px;
+  line-height:1.1;
+  background:linear-gradient(135deg,#fff 30%, #b9c2d0 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.slide .subhead{
+  font-size:16px;
+  color:var(--text-dim);
+  margin:0 0 26px;
+  max-width:760px;
+  line-height:1.5;
+}
+.content{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:11.5px;
+  font-weight:700;
+  letter-spacing:0.04em;
+  padding:4px 10px;
+  border-radius:999px;
+  text-transform:uppercase;
+}
+.badge.purple{background:rgba(124,92,255,0.14);color:#b6a4ff;border:1px solid rgba(124,92,255,0.35);}
+.badge.blue{background:rgba(54,197,240,0.14);color:#8fe0fb;border:1px solid rgba(54,197,240,0.35);}
+.badge.green{background:rgba(46,182,125,0.14);color:#8fe8c4;border:1px solid rgba(46,182,125,0.35);}
+.badge.yellow{background:rgba(236,178,46,0.14);color:#f5d68a;border:1px solid rgba(236,178,46,0.35);}
+.badge.red{background:rgba(224,30,90,0.14);color:#f796b3;border:1px solid rgba(224,30,90,0.35);}
+
+/* Panels / cards */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px 24px;
+  box-shadow:var(--shadow);
+}
+.panel-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:15px;
+  font-weight:700;
+  margin-bottom:14px;
+  color:var(--text);
+}
+.panel-title .icon{
+  width:30px;height:30px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;
+  flex-shrink:0;
+}
+
+/* Screenshot placeholders */
+.shot{
+  position:relative;
+  border:1.5px dashed var(--border);
+  border-radius:14px;
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 2px, transparent 2px, transparent 14px),
+    var(--bg-soft);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:18px;
+  min-height:120px;
+  transition:border-color .3s;
+}
+.shot:hover{border-color:var(--accent);}
+.shot .shot-icon{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--panel-2);
+  border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  color:var(--text-dim);
+}
+.shot .shot-label{
+  font-size:12.5px;
+  font-weight:700;
+  color:var(--text-dim);
+  text-align:center;
+}
+.shot .shot-sub{
+  font-size:11px;
+  color:var(--text-faint);
+  text-align:center;
+  max-width:260px;
+}
+.shot .corner-tag{
+  position:absolute;
+  top:10px;right:10px;
+  font-size:9.5px;
+  font-weight:700;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  color:var(--text-faint);
+  background:rgba(0,0,0,0.3);
+  padding:3px 7px;
+  border-radius:6px;
+  border:1px solid var(--border-soft);
+}
+
+/* Two column layout */
+.cols{
+  display:grid;
+  gap:24px;
+  flex:1;
+  min-height:0;
+}
+.cols-2{grid-template-columns:1fr 1fr;}
+.cols-3{grid-template-columns:1fr 1fr 1fr;}
+
+/* Flow arrow */
+.flow-arrow{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+  color:var(--text-faint);
+}
+.flow-arrow .arrow-line{
+  width:100%;
+  height:2px;
+  background:linear-gradient(90deg, transparent, var(--accent-2), transparent);
+  position:relative;
+}
+
+/* lists */
+ul.feat-list{
+  list-style:none;
+  margin:0;padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+ul.feat-list li{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  font-size:13.5px;
+  color:var(--text-dim);
+  line-height:1.45;
+}
+ul.feat-list li .bullet{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--accent-2);
+  margin-top:6px;
+  flex-shrink:0;
+}
+ul.feat-list li b{color:var(--text);font-weight:600;}
+code.tok{
+  font-family:'JetBrains Mono','Fira Code',monospace;
+  background:rgba(124,92,255,0.12);
+  color:#c9bdff;
+  padding:1.5px 7px;
+  border-radius:6px;
+  font-size:12.5px;
+  border:1px solid rgba(124,92,255,0.25);
+}
+code.tok.cyan{background:rgba(54,197,240,0.12);color:#9fe6fb;border-color:rgba(54,197,240,0.25);}
+code.tok.green{background:rgba(46,182,125,0.12);color:#9bedc9;border-color:rgba(46,182,125,0.25);}
+code.tok.pink{background:rgba(224,30,90,0.12);color:#f8a5bf;border-color:rgba(224,30,90,0.25);}
+code.tok.yellow{background:rgba(236,178,46,0.12);color:#f7dd9d;border-color:rgba(236,178,46,0.25);}
+
+/* table */
+table.cmp{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  font-size:13px;
+}
+table.cmp th{
+  text-align:left;
+  font-size:11.5px;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+  color:var(--text-faint);
+  padding:0 14px 10px;
+  font-weight:700;
+}
+table.cmp td{
+  padding:13px 14px;
+  background:var(--panel-2);
+  border-top:1px solid var(--border-soft);
+  border-bottom:1px solid var(--border-soft);
+  color:var(--text-dim);
+  vertical-align:top;
+}
+table.cmp tr td:first-child{border-left:1px solid var(--border-soft);border-radius:10px 0 0 10px;}
+table.cmp tr td:last-child{border-right:1px solid var(--border-soft);border-radius:0 10px 10px 0;}
+table.cmp tr{transition:transform .2s;}
+table.cmp td b{color:var(--text);}
+
+/* key message strip */
+.key-msg{
+  display:flex;
+  gap:16px;
+  margin-top:18px;
+  flex-wrap:wrap;
+}
+.key-msg .msg-chip{
+  flex:1;
+  min-width:220px;
+  background:linear-gradient(135deg, rgba(124,92,255,0.10), rgba(54,197,240,0.06));
+  border:1px solid rgba(124,92,255,0.25);
+  border-radius:12px;
+  padding:14px 16px;
+  font-size:13.5px;
+  color:var(--text);
+  font-weight:500;
+  line-height:1.4;
+}
+.msg-chip .lbl{
+  display:block;
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:0.07em;
+  color:var(--accent-2);
+  font-weight:700;
+  margin-bottom:5px;
+}
+
+/* progress / nav */
+.progress-bar{
+  position:fixed;
+  top:0;left:0;
+  height:3px;
+  background:var(--gradient);
+  transition:width .4s ease;
+  z-index:50;
+}
+.nav-dots{
+  position:fixed;
+  bottom:22px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:9px;
+  z-index:50;
+  background:rgba(15,18,24,0.7);
+  backdrop-filter:blur(12px);
+  padding:9px 14px;
+  border-radius:999px;
+  border:1px solid var(--border);
+}
+.nav-dots .ndot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--border);
+  cursor:pointer;
+  transition:all .3s;
+}
+.nav-dots .ndot.active{
+  background:var(--gradient);
+  width:22px;
+  border-radius:5px;
+}
+.slide-counter{
+  position:fixed;
+  bottom:24px;
+  right:32px;
+  font-size:12px;
+  color:var(--text-faint);
+  font-weight:600;
+  letter-spacing:0.04em;
+  z-index:50;
+}
+.slide-counter b{color:var(--text-dim);}
+.nav-arrows{
+  position:fixed;
+  bottom:20px;
+  left:32px;
+  display:flex;
+  gap:8px;
+  z-index:50;
+}
+.nav-arrows button{
+  width:38px;height:38px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:rgba(22,27,36,0.7);
+  color:var(--text-dim);
+  cursor:pointer;
+  font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.nav-arrows button:hover{background:var(--panel-2);color:var(--text);border-color:var(--accent);}
+
+/* schematic boxes for slide 1 */
+.flow-col{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  height:100%;
+}
+.flow-col .flow-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:4px;
+}
+.flow-col .flow-head .num{
+  width:28px;height:28px;
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;
+  font-size:13px;
+}
+.flow-col .flow-head h3{
+  margin:0;
+  font-size:16px;
+  font-weight:700;
+}
+.mini-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:8px;
+}
+.mini-tag{
+  font-size:12px;
+  padding:6px 11px;
+  border-radius:8px;
+  background:var(--panel-2);
+  border:1px solid var(--border-soft);
+  color:var(--text-dim);
+  font-weight:600;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.mini-tag .em{font-size:13px;}
+
+.center-vs{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:0 6px;
+}
+.center-vs .arrow-down{
+  font-size:26px;
+  color:var(--accent-2);
+}
+.center-vs .vs-label{
+  font-size:11px;
+  font-weight:800;
+  color:var(--text-faint);
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  writing-mode:vertical-rl;
+}
+
+/* schema diagram (slides 3,5,6) */
+.diagram{
+  display:flex;
+  align-items:center;
+  gap:0;
+  background:var(--panel-2);
+  border:1px solid var(--border-soft);
+  border-radius:14px;
+  padding:20px;
+  overflow:visible;
+}
+.diagram .node{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  text-align:center;
+  padding:6px;
+}
+.diagram .node .nicon{
+  width:46px;height:46px;
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:21px;
+}
+.diagram .node .nlabel{font-size:12.5px;font-weight:700;color:var(--text);}
+.diagram .node .nsub{font-size:10.5px;color:var(--text-faint);}
+.diagram .dia-arrow{
+  flex:0 0 auto;
+  font-size:18px;
+  color:var(--text-faint);
+  padding:0 6px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.diagram .dia-arrow span.lbl{
+  font-size:9.5px;
+  color:var(--accent-2);
+  font-weight:700;
+  margin-top:2px;
+  white-space:nowrap;
+}
+
+/* footer brand */
+.brand-foot{
+  position:fixed;
+  top:24px;
+  right:32px;
+  font-size:11px;
+  color:var(--text-faint);
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  font-weight:700;
+  z-index:50;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.brand-foot .logo-dot{
+  width:18px;height:18px;
+  border-radius:5px;
+  background:var(--gradient);
+}
+
+/* responsive */
+@media (max-width:1100px){
+  .slide{padding:30px 28px 70px;}
+  .cols-2,.cols-3{grid-template-columns:1fr;}
+  .slide h1{font-size:28px;}
+}
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar" style="width:16.6%"></div>
+<div class="brand-foot"><span class="logo-dot"></span> SLACK API · GUIDE VISUEL</div>
+
+<div class="deck" id="deck">
+
+<!-- SLIDE 1 — VUE D'ENSEMBLE -->
+<section class="slide active" data-index="0">
+  <div class="slide-kicker"><span class="dot"></span> 01 / 06 — Vue d'ensemble</div>
+  <h1>Une Slack App, deux mondes</h1>
+  <p class="subhead">Tout se configure dans la <b style="color:#b6a4ff;">console Slack API</b>, et tout s'utilise ensuite dans le <b style="color:#8fe0fb;">workspace Slack</b>. Comprendre cette séparation, c'est comprendre l'API Slack.</p>
+
+  <div class="content">
+    <div class="cols cols-2" style="align-items:stretch;">
+      <!-- Console Slack API -->
+      <div class="panel flow-col">
+        <div class="flow-head">
+          <div class="num" style="background:rgba(124,92,255,0.18);color:#b6a4ff;">A</div>
+          <h3 style="color:#cfc3ff;">Console Slack API</h3>
+        </div>
+        <p style="font-size:13px;color:var(--text-dim);margin:0 0 6px;">api.slack.com/apps — c'est le centre de configuration technique.</p>
+        <div class="mini-tags">
+          <div class="mini-tag"><span class="em">🧩</span> Création de l'app</div>
+          <div class="mini-tag"><span class="em">🔐</span> Scopes</div>
+          <div class="mini-tag"><span class="em">🔑</span> Tokens</div>
+          <div class="mini-tag"><span class="em">⚡</span> Events</div>
+          <div class="mini-tag"><span class="em">🛡️</span> Secrets</div>
+        </div>
+        <div class="shot" style="margin-top:auto;min-height:160px;">
+          <span class="corner-tag">Screenshot</span>
+          <div class="shot-icon">🖥️</div>
+          <div class="shot-label">Dashboard Slack API</div>
+          <div class="shot-sub">Coller ici la vue d'ensemble de l'app (api.slack.com/apps → votre app)</div>
+        </div>
+      </div>
+
+      <!-- center vs -->
+      <div class="center-vs">
+        <div class="arrow-down">⇄</div>
+        <div class="vs-label">Config → Usage</div>
+      </div>
+
+      <!-- Workspace Slack -->
+      <div class="panel flow-col">
+        <div class="flow-head">
+          <div class="num" style="background:rgba(54,197,240,0.18);color:#8fe0fb;">B</div>
+          <h3 style="color:#aeeafc;">Workspace Slack</h3>
+        </div>
+        <p style="font-size:13px;color:var(--text-dim);margin:0 0 6px;">L'application Slack elle-même — c'est là que le bot vit et agit.</p>
+        <div class="mini-tags">
+          <div class="mini-tag"><span class="em">📥</span> Installation</div>
+          <div class="mini-tag"><span class="em">✅</span> Autorisation</div>
+          <div class="mini-tag"><span class="em">🤖</span> Utilisation du bot</div>
+        </div>
+        <div class="shot" style="margin-top:auto;min-height:160px;">
+          <span class="corner-tag">Screenshot</span>
+          <div class="shot-icon">📲</div>
+          <div class="shot-label">Installation / Autorisation</div>
+          <div class="shot-sub">Coller ici l'écran "Install to Workspace" ou la fenêtre d'autorisation OAuth</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="key-msg">
+      <div class="msg-chip" style="flex:0 1 100%;text-align:center;">
+        <span class="lbl">Message central</span>
+        Configuration dans la console API, usage dans Slack.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 2 — OAUTH & PERMISSIONS -->
+<section class="slide" data-index="1">
+  <div class="slide-kicker"><span class="dot"></span> 02 / 06 — OAuth & Permissions</div>
+  <h1>Le centre des droits et des tokens</h1>
+  <p class="subhead">Dans la console : <code class="tok">Votre App → OAuth & Permissions</code>. C'est ici que se définissent les droits du bot et que l'on récupère les tokens d'accès.</p>
+
+  <div class="content">
+    <div class="cols cols-2" style="grid-template-columns:1.1fr 1fr;">
+      <!-- left: shot -->
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div class="panel-title"><span class="icon" style="background:rgba(124,92,255,0.16);color:#b6a4ff;">🔐</span> OAuth & Permissions</div>
+        <div class="shot" style="flex:1;min-height:280px;">
+          <span class="corner-tag">Screenshot</span>
+          <div class="shot-icon">🖼️</div>
+          <div class="shot-label">Page OAuth & Permissions</div>
+          <div class="shot-sub">Coller ici la capture complète : Bot Token Scopes, User Token Scopes, Install to Workspace</div>
+        </div>
+      </div>
+
+      <!-- right: details -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="panel">
+          <div class="panel-title"><span class="icon" style="background:rgba(54,197,240,0.16);color:#8fe0fb;">⚙️</span> Ce qu'on configure</div>
+          <ul class="feat-list">
+            <li><span class="bullet"></span><b>Bot Token Scopes</b> — droits du bot (ex: <code class="tok cyan">chat:write</code>)</li>
+            <li><span class="bullet"></span><b>User Token Scopes</b> — droits agissant au nom d'un utilisateur</li>
+            <li><span class="bullet"></span><b>Install to Workspace</b> — bouton qui déclenche l'installation réelle</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <div class="panel-title"><span class="icon" style="background:rgba(46,182,125,0.16);color:#8fe8c4;">🔑</span> Ce qu'on récupère</div>
+          <ul class="feat-list">
+            <li><span class="bullet" style="background:var(--accent-3);"></span><b>Bot User OAuth Token</b> — <code class="tok green">xoxb-...</code></li>
+            <li><span class="bullet" style="background:var(--accent-5);"></span><b>User Token</b> — <code class="tok pink">xoxp-...</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="key-msg">
+      <div class="msg-chip">
+        <span class="lbl">À retenir</span>
+        Les <b>scopes</b> définissent ce que le token a le droit de faire.
+      </div>
+      <div class="msg-chip">
+        <span class="lbl">À retenir</span>
+        Le <code class="tok green">xoxb-</code> est le token principal pour agir comme le bot.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 3 — EVENT SUBSCRIPTIONS -->
+<section class="slide" data-index="2">
+  <div class="slide-kicker"><span class="dot"></span> 03 / 06 — Event Subscriptions</div>
+  <h1>Rendre le bot réactif</h1>
+  <p class="subhead">Dans la console : <code class="tok">Votre App → Event Subscriptions</code>. C'est ici que Slack apprend quoi vous envoyer, et où l'envoyer.</p>
+
+  <div class="content">
+    <div class="cols cols-2">
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div class="panel-title"><span class="icon" style="background:rgba(236,178,46,0.16);color:#f5d68a;">⚡</span> Event Subscriptions</div>
+        <div class="shot" style="flex:1;min-height:200px;">
+          <span class="corner-tag">Screenshot</span>
+          <div class="shot-icon">🖼️</div>
+          <div class="shot-label">Page Event Subscriptions</div>
+          <div class="shot-sub">Coller ici : Enable Events, Request URL, Subscribe to Bot Events</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="panel">
+          <div class="panel-title"><span class="icon" style="background:rgba(124,92,255,0.16);color:#b6a4ff;">⚙️</span> Ce qu'on configure</div>
+          <ul class="feat-list">
+            <li><span class="bullet"></span><b>Enable Events</b> — active la fonctionnalité</li>
+            <li><span class="bullet"></span><b>Request URL</b> — endpoint qui recevra les events (ex: webhook n8n)</li>
+            <li><span class="bullet"></span><b>Subscribe to Bot Events</b> — liste des events écoutés</li>
+          </ul>
+        </div>
+        <div class="panel">
+          <div class="panel-title"><span class="icon" style="background:rgba(54,197,240,0.16);color:#8fe0fb;">📋</span> Exemples d'events</div>
+          <div class="mini-tags">
+            <div class="mini-tag"><span class="em">💬</span> app_mention</div>
+            <div class="mini-tag"><span class="em">✉️</span> message.im</div>
+            <div class="mini-tag"><span class="em">#️⃣</span> message.channels</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-title"><span class="icon" style="background:rgba(46,182,125,0.16);color:#8fe8c4;">🧭</span> Schéma du flux</div>
+      <div class="diagram">
+        <div class="node">
+          <div class="nicon" style="background:rgba(124,92,255,0.16);color:#b6a4ff;">💬</div>
+          <div class="nlabel">Slack</div>
+          <div class="nsub">Événement déclenché</div>
+        </div>
+        <div class="dia-arrow">➜<span class="lbl">HTTP POST</span></div>
+        <div class="node">
+          <div class="nicon" style="background:rgba(236,178,46,0.16);color:#f5d68a;">🌐</div>
+          <div class="nlabel">Request URL</div>
+          <div class="nsub">Endpoint configuré</div>
+        </div>
+        <div class="dia-arrow">➜<span class="lbl">Reçu par</span></div>
+        <div class="node">
+          <div class="nicon" style="background:rgba(54,197,240,0.16);color:#8fe0fb;">🔁</div>
+          <div class="nlabel">Backend / n8n</div>
+          <div class="nsub">Traitement du workflow</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="key-msg">
+      <div class="msg-chip"><span class="lbl">À retenir</span>Event Subscriptions ne donne <b>pas</b> les droits.</div>
+      <div class="msg-chip"><span class="lbl">À retenir</span>Event Subscriptions dit <b>ce que Slack envoie</b> à l'app.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 4 — EVENTS + SCOPES -->
+<section class="slide" data-index="3">
+  <div class="slide-kicker"><span class="dot"></span> 04 / 06 — Alignement</div>
+  <h1>Events + Scopes = comportement réel</h1>
+  <p class="subhead">Le bot ne fonctionne que si les <b style="color:#8fe0fb;">events souscrits</b> et les <b style="color:#b6a4ff;">scopes accordés</b> sont alignés.</p>
+
+  <div class="content">
+    <div class="panel">
+      <table class="cmp">
+        <tr>
+          <th style="width:26%;">Comportement souhaité</th>
+          <th style="width:24%;">Event à souscrire</th>
+          <th style="width:50%;">Scope(s) nécessaire(s)</th>
+        </tr>
+        <tr>
+          <td><b>🔔 Réagir à une mention</b><br><span style="font-size:11.5px;color:var(--text-faint);">le bot répond quand on le tag</span></td>
+          <td><code class="tok cyan">app_mention</code></td>
+          <td><code class="tok">app_mentions:read</code> &nbsp;+ souvent&nbsp; <code class="tok green">chat:write</code></td>
+        </tr>
+        <tr>
+          <td><b>✉️ Répondre en message privé</b><br><span style="font-size:11.5px;color:var(--text-faint);">conversation en DM avec le bot</span></td>
+          <td><code class="tok cyan">message.im</code></td>
+          <td>Scopes DM adaptés (ex: <code class="tok">im:history</code>, <code class="tok green">chat:write</code>)</td>
+        </tr>
+        <tr>
+          <td><b>📖 Lire les messages d'un canal</b><br><span style="font-size:11.5px;color:var(--text-faint);">écoute passive d'un channel</span></td>
+          <td><code class="tok cyan">message.channels</code></td>
+          <td>Scopes de lecture (ex: <code class="tok">channels:history</code>)</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="cols cols-2" style="margin-top:18px;flex:none;">
+      <div class="key-msg" style="margin-top:0;">
+        <div class="msg-chip"><span class="lbl">Scopes</span>= droits accordés au token</div>
+        <div class="msg-chip"><span class="lbl">Events</span>= déclencheurs entrants envoyés par Slack</div>
+      </div>
+      <div class="shot" style="min-height:90px;">
+        <span class="corner-tag">Screenshot (optionnel)</span>
+        <div class="shot-icon">🗂️</div>
+        <div class="shot-label">Liste d'events configurés</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 5 — SIGNING SECRET -->
+<section class="slide" data-index="4">
+  <div class="slide-kicker"><span class="dot"></span> 05 / 06 — Signing Secret</div>
+  <h1>Vérifier que Slack est bien Slack</h1>
+  <p class="subhead">Dans la console : <code class="tok">Basic Information → App Credentials → Signing Secret</code>. Ce n'est pas un token d'accès.</p>
+
+  <div class="content">
+    <div class="cols cols-2">
+      <div class="panel" style="display:flex;flex-direction:column;">
+        <div class="panel-title"><span class="icon" style="background:rgba(224,30,90,0.16);color:#f796b3;">🛡️</span> Basic Information</div>
+        <div class="shot" style="flex:1;min-height:220px;">
+          <span class="corner-tag">Screenshot</span>
+          <div class="shot-icon">🖼️</div>
+          <div class="shot-label">App Credentials</div>
+          <div class="shot-sub">Coller ici la section "App Credentials" avec le Signing Secret masqué/révélé</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="panel">
+          <div class="panel-title"><span class="icon" style="background:rgba(224,30,90,0.16);color:#f796b3;">📍</span> Où le trouver</div>
+          <ul class="feat-list">
+            <li><span class="bullet" style="background:var(--accent-5);"></span>Basic Information &gt; App Credentials &gt; <b>Signing Secret</b></li>
+          </ul>
+        </div>
+        <div class="panel">
+          <div class="panel-title"><span class="icon" style="background:rgba(224,30,90,0.16);color:#f796b3;">🎯</span> À quoi il sert</div>
+          <ul class="feat-list">
+            <li><span class="bullet" style="background:var(--accent-5);"></span>Vérifier que la requête vient bien de Slack</li>
+            <li><span class="bullet" style="background:var(--accent-5);"></span>Sécuriser les appels entrants vers la Request URL</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-title"><span class="icon" style="background:rgba(54,197,240,0.16);color:#8fe0fb;">🧭</span> Mini schéma de vérification</div>
+      <div class="diagram">
+        <div class="node">
+          <div class="nicon" style="background:rgba(124,92,255,0.16);color:#b6a4ff;">💬</div>
+          <div class="nlabel">Slack</div>
+          <div class="nsub">Envoie une requête signée</div>
+        </div>
+        <div class="dia-arrow">➜<span class="lbl">Signature HMAC</span></div>
+        <div class="node">
+          <div class="nicon" style="background:rgba(224,30,90,0.16);color:#f796b3;">🔍</div>
+          <div class="nlabel">Vérification</div>
+          <div class="nsub">Avec le Signing Secret</div>
+        </div>
+        <div class="dia-arrow">➜<span class="lbl">Si valide</span></div>
+        <div class="node">
+          <div class="nicon" style="background:rgba(46,182,125,0.16);color:#8fe8c4;">✅</div>
+          <div class="nlabel">Requête acceptée</div>
+          <div class="nsub">Traitement autorisé</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="key-msg">
+      <div class="msg-chip"><span class="lbl">Token</span>= appeler Slack</div>
+      <div class="msg-chip"><span class="lbl">Signing Secret</span>= vérifier Slack quand Slack appelle ton système</div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 6 — MAPPING N8N -->
+<section class="slide" data-index="5">
+  <div class="slide-kicker"><span class="dot"></span> 06 / 06 — Mapping Slack ↔ n8n</div>
+  <h1>Quoi copier, et où</h1>
+  <p class="subhead">Le pont concret entre la console Slack API et la configuration n8n.</p>
+
+  <div class="content">
+    <div class="panel">
+      <table class="cmp">
+        <tr>
+          <th style="width:30%;">Depuis Slack API</th>
+          <th style="width:35%;">Vers n8n</th>
+          <th style="width:35%;">Remarque</th>
+        </tr>
+        <tr>
+          <td><b>🔑 Bot User OAuth Token</b><br><span style="font-size:11.5px;color:var(--text-faint);">OAuth & Permissions</span></td>
+          <td>Champ <code class="tok green">Access Token</code> du credential Slack</td>
+          <td>Suffit souvent pour <b>envoyer</b> des messages</td>
+        </tr>
+        <tr>
+          <td><b>🛡️ Signing Secret</b><br><span style="font-size:11.5px;color:var(--text-faint);">Basic Information</span></td>
+          <td>Champ <code class="tok pink">Signature Secret</code> du Slack Trigger</td>
+          <td>Nécessaire si trigger / webhook entrant</td>
+        </tr>
+        <tr>
+          <td><b>🌐 Request URL</b><br><span style="font-size:11.5px;color:var(--text-faint);">Event Subscriptions</span></td>
+          <td>URL générée par le <code class="tok cyan">Slack Trigger</code> n8n</td>
+          <td>À coller dans Event Subscriptions</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="cols cols-2" style="margin-top:18px;">
+      <div class="panel">
+        <div class="panel-title"><span class="icon" style="background:rgba(124,92,255,0.16);color:#b6a4ff;">🧭</span> Schéma global</div>
+        <div class="diagram" style="flex-wrap:wrap;">
+          <div class="node">
+            <div class="nicon" style="background:rgba(124,92,255,0.16);color:#b6a4ff;">🧩</div>
+            <div class="nlabel">Slack API</div>
+            <div class="nsub">Tokens, scopes, secret</div>
+          </div>
+          <div class="dia-arrow">➜<span class="lbl">copie</span></div>
+          <div class="node">
+            <div class="nicon" style="background:rgba(54,197,240,0.16);color:#8fe0fb;">🗝️</div>
+            <div class="nlabel">n8n Credentials</div>
+            <div class="nsub">Slack API credential</div>
+          </div>
+          <div class="dia-arrow">➜<span class="lbl">utilise</span></div>
+          <div class="node">
+            <div class="nicon" style="background:rgba(46,182,125,0.16);color:#8fe8c4;">⚡</div>
+            <div class="nlabel">Trigger / Node</div>
+            <div class="nsub">Message ou Slack Trigger</div>
+          </div>
+        </div>
+      </div>
+      <div class="cols cols-2" style="gap:14px;">
+        <div class="shot" style="min-height:120px;">
+          <span class="corner-tag">Screenshot</span>
+          <div class="shot-icon">🗝️</div>
+          <div class="shot-label">n8n Credentials</div>
+          <div class="shot-sub">Slack API credential</div>
+        </div>
+        <div class="shot" style="min-height:120px;">
+          <span class="corner-tag">Screenshot</span>
+          <div class="shot-icon">⚡</div>
+          <div class="shot-label">Slack Trigger</div>
+          <div class="shot-sub">Event Subscriptions côté n8n</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="key-msg">
+      <div class="msg-chip"><span class="lbl">Envoyer depuis n8n</span>Token + scopes suffisent souvent</div>
+      <div class="msg-chip"><span class="lbl">Déclencher depuis Slack</span>Il faut aussi Event Subscriptions + idéalement Signing Secret</div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div class="nav-arrows">
+  <button id="prevBtn" aria-label="précédent">←</button>
+  <button id="nextBtn" aria-label="suivant">→</button>
+</div>
+<div class="nav-dots" id="navDots"></div>
+<div class="slide-counter" id="counter"><b>1</b> / 6</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let current = 0;
+
+const navDots = document.getElementById('navDots');
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'ndot' + (i === 0 ? ' active' : '');
+  d.addEventListener('click', () => goTo(i));
+  navDots.appendChild(d);
+});
+const dots = navDots.querySelectorAll('.ndot');
+const progressBar = document.getElementById('progressBar');
+const counter = document.getElementById('counter');
+
+function goTo(index){
+  if(index < 0 || index >= total) return;
+  slides[current].classList.remove('active');
+  current = index;
+  slides[current].classList.add('active');
+  dots.forEach((d,i) => d.classList.toggle('active', i === current));
+  progressBar.style.width = ((current+1)/total*100) + '%';
+  counter.innerHTML = '<b>' + (current+1) + '</b> / ' + total;
+}
+
+document.getElementById('nextBtn').addEventListener('click', () => goTo(current+1));
+document.getElementById('prevBtn').addEventListener('click', () => goTo(current-1));
+
+document.addEventListener('keydown', (e) => {
+  if(['ArrowRight','PageDown',' '].includes(e.key)){ e.preventDefault(); goTo(current+1); }
+  else if(['ArrowLeft','PageUp'].includes(e.key)){ e.preventDefault(); goTo(current-1); }
+  else if(e.key === 'Home'){ goTo(0); }
+  else if(e.key === 'End'){ goTo(total-1); }
+});
+
+let touchStartX = 0;
+document.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
+document.addEventListener('touchend', e => {
+  const diff = touchStartX - e.changedTouches[0].clientX;
+  if(Math.abs(diff) > 60){ diff > 0 ? goTo(current+1) : goTo(current-1); }
+});
+</script>
+</body>
+</html>
